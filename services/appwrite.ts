@@ -50,6 +50,36 @@ export const updateSearchCount = async (query: string, movie: Movie) => {
     // if a document is found increment the searchCount field
 
     // if no document is found
-        // create a new document in Appwrite databese ->
+    // create a new document in Appwrite databese ->
 
+}
+
+export const getTrendingMovies = async (): Promise<TrendingMovie[] | undefined> => {
+    try {
+        // Fetch more than 5 to ensure we have enough after filtering
+        const result = await database.listDocuments(DATABASE_ID, COLLECTION_ID, [
+            Query.limit(20), 
+            Query.orderDesc('count'),
+        ]);
+
+        const documents = result.documents as unknown as TrendingMovie[];
+
+        // Use a Map to keep only the first instance of each movie ID/Title
+        const uniqueMoviesMap = new Map();
+
+        for (const movie of documents) {
+            // Replace 'movie_id' with whatever field identifies the movie (e.g., tmdb_id)
+            if (!uniqueMoviesMap.has(movie.movie_id)) {
+                uniqueMoviesMap.set(movie.movie_id, movie);
+            }
+            
+            // Stop once we have 5 unique items
+            if (uniqueMoviesMap.size === 5) break;
+        }
+
+        return Array.from(uniqueMoviesMap.values());
+    } catch (error) {
+        console.log(error);
+        return undefined;
+    }
 }
