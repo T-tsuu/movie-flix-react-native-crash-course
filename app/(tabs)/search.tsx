@@ -3,11 +3,12 @@ import SearchBar from '@/components/SearchBar'
 import { icons } from '@/constants/icons'
 import { images } from '@/constants/images'
 import { fetchMovies } from '@/services/api'
+import { updateSearchCount } from '@/services/appwrite'
 import useFetch from '@/services/useFetch'
 import React, { useEffect, useState } from 'react'
 import { ActivityIndicator, FlatList, Image, Text, View } from 'react-native'
 
-const Search = () => {
+const search = () => {
     const [searchQuery, setSearchQuery] = useState('')
 
 
@@ -22,7 +23,6 @@ const Search = () => {
     }), false)
 
     useEffect(() => {
-
         const timeoutId = setTimeout(
             async () => {
                 if (searchQuery.trim()) {
@@ -35,8 +35,20 @@ const Search = () => {
         )
 
         return () => clearTimeout(timeoutId)
-
     }, [searchQuery])
+
+    useEffect(() => {
+        const firstMovie = movies?.[0]
+        if (!searchQuery.trim() || !firstMovie) return
+
+        const analyticsTimeoutId = setTimeout(() => {
+            updateSearchCount(searchQuery, firstMovie).catch((err) => {
+                console.warn('Failed to update search count', err)
+            })
+        }, 500)
+
+        return () => clearTimeout(analyticsTimeoutId)
+    }, [searchQuery, movies])
 
     return (
         <View className='flex-1 bg-primary'>
@@ -90,7 +102,7 @@ const Search = () => {
                     !moviesLoading && !moviesLoading ? (
                         <View className='mt-10 px-5'>
                             <Text className='text-center text-gray-500' >
-                                {searchQuery.trim() ?  'No movies found' : 'Search for a movie'}
+                                {searchQuery.trim() ? 'No movies found' : 'Search for a movie'}
                             </Text>
                         </View>
                     ) : null
@@ -100,4 +112,4 @@ const Search = () => {
     )
 }
 
-export default Search
+export default search
